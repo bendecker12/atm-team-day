@@ -24,10 +24,20 @@ module.exports = async (req, res) => {
         const overall = props.Overall?.number || 0;
         const immersion = props.Immersion?.number || 0;
         const themeScore = props["Theme Score"]?.number || 0;
+        const voterName = (props["Voter Name"]?.rich_text || [])
+          .map((t) => t.plain_text)
+          .join("")
+          .trim();
 
-        if (!totals[campusId]) totals[campusId] = { total: 0, count: 0 };
+        if (!totals[campusId]) totals[campusId] = { total: 0, count: 0, voters: [] };
         totals[campusId].total += overall + immersion + themeScore;
         totals[campusId].count += 1;
+        totals[campusId].voters.push({
+          name: voterName || null,
+          overall,
+          immersion,
+          theme: themeScore
+        });
       }
 
       hasMore = resp.has_more;

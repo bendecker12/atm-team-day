@@ -412,6 +412,94 @@
     font-size: 12px;
     margin-top: 6px;
   }
+  .voter-note{
+    font-size: 12px;
+    color: var(--dim);
+    font-style: italic;
+    margin-bottom: 10px;
+  }
+
+  .name-row{
+    display:flex;
+    flex-direction: column;
+    gap: 4px;
+    margin-bottom: 12px;
+  }
+  .name-label{
+    font-size: 12px;
+    color: var(--dim);
+    letter-spacing: 0.02em;
+  }
+  .name-input{
+    padding: 8px 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: rgba(255,255,255,0.05);
+    color: var(--white);
+    font-family: 'Oswald', sans-serif;
+    font-size: 14px;
+  }
+  .name-input:focus{ outline: none; border-color: var(--blue); }
+  .name-input::placeholder{ color: rgba(228,230,240,0.4); }
+
+  .survey-recap{ text-align:center; }
+  .survey-recap-scores{
+    font-weight: 600;
+    color: var(--white);
+    font-size: 14px;
+    padding: 6px 0;
+  }
+  .edit-btn{
+    display:block;
+    margin: 6px auto 0;
+    padding: 8px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(255,255,255,0.25);
+    background: transparent;
+    color: var(--dim);
+    font-family: 'Oswald', sans-serif;
+    font-size: 12px;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    cursor: pointer;
+  }
+  .edit-btn:hover{ color: var(--white); border-color: var(--blue); }
+  .survey-locked-note{
+    text-align:center;
+    color: var(--dim);
+    font-size: 13px;
+    font-style: italic;
+    padding: 6px 0;
+  }
+
+  .lb-voters-toggle{
+    display:block;
+    width:100%;
+    text-align:left;
+    margin: -4px 0 8px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: var(--dim);
+    font-family: 'Oswald', sans-serif;
+    font-size: 11px;
+    letter-spacing: 0.03em;
+    cursor: pointer;
+  }
+  .lb-voters-toggle:hover{ color: var(--white); }
+  .lb-voters{
+    margin: 0 0 12px;
+    padding: 8px 10px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 8px;
+  }
+  .lb-voter-row{
+    display:flex;
+    justify-content: space-between;
+    font-size: 12px;
+    color: var(--dim);
+    padding: 3px 0;
+  }
 
   /* ---------- LEADERBOARD ---------- */
   .leaderboard{
@@ -659,18 +747,55 @@ function updateCountdown(){
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
+function getVoterName(){
+  try{ return localStorage.getItem("voterName") || ""; }catch(e){ return ""; }
+}
+function setVoterName(name){
+  try{ if(name) localStorage.setItem("voterName", name); }catch(e){}
+}
+function getSubmission(campusId){
+  try{
+    const raw = localStorage.getItem(`submission:${campusId}`);
+    return raw ? JSON.parse(raw) : null;
+  }catch(e){ return null; }
+}
+function setSubmission(campusId, data){
+  try{ localStorage.setItem(`submission:${campusId}`, JSON.stringify(data)); }catch(e){}
+}
+
 function renderSurvey(campusId, campusLabel, theme){
   const wrap = document.createElement("div");
   wrap.className = "survey";
   wrap.innerHTML = `
     <div class="survey-title">Rate this build</div>
+    <div class="voter-note" id="voter-note-${campusId}" style="display:none"></div>
     <div class="survey-body"></div>
   `;
   const body = wrap.querySelector(".survey-body");
-  const selections = {};
 
-  function renderForm(){
+  function renderForm(existing){
     body.innerHTML = "";
+    const selections = {
+      overall: existing ? existing.overall : undefined,
+      immersion: existing ? existing.immersion : undefined,
+      theme: existing ? existing.theme : undefined
+    };
+
+    const nameRow = document.createElement("div");
+    nameRow.className = "name-row";
+    const nameLabel = document.createElement("label");
+    nameLabel.className = "name-label";
+    nameLabel.textContent = "Your name (optional)";
+    const nameInput = document.createElement("input");
+    nameInput.type = "text";
+    nameInput.className = "name-input";
+    nameInput.maxLength = 60;
+    nameInput.placeholder = "e.g. Ben";
+    nameInput.value = existing ? (existing.name || "") : getVoterName();
+    nameRow.appendChild(nameLabel);
+    nameRow.appendChild(nameInput);
+    body.appendChild(nameRow);
+
     CATEGORIES.forEach(cat => {
       const row = document.createElement("div");
       row.className = "cat-row";
@@ -681,6 +806,7 @@ function renderSurvey(campusId, campusLabel, theme){
         const btn = document.createElement("button");
         btn.type = "button";
         btn.textContent = i;
+        if(selections[cat.key] === i) btn.classList.add("selected");
         btn.addEventListener("click", () => {
           selections[cat.key] = i;
           scale.querySelectorAll("button").forEach(b => b.classList.remove("selected"));
@@ -692,32 +818,43 @@ function renderSurvey(campusId, campusLabel, theme){
       row.appendChild(scale);
       body.appendChild(row);
     });
+
     const submitBtn = document.createElement("button");
     submitBtn.className = "submit-btn";
-    submitBtn.textContent = "Submit rating";
-    submitBtn.disabled = true;
+    submitBtn.textContent = existing ? "Save changes" : "Submit rating";
+    submitBtn.disabled = !CATEGORIES.every(c => selections[c.key] !== undefined);
     submitBtn.addEventListener("click", async () => {
       submitBtn.disabled = true;
-      submitBtn.textContent = "Submitting…";
+      submitBtn.textContent = existing ? "Saving…" : "Submitting…";
+      const name = nameInput.value.trim();
       try{
         const res = await fetch("/api/rate", {
-          method: "POST",
+          method: existing ? "PATCH" : "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             campusId,
+            pageId: existing ? existing.pageId : undefined,
             overall: selections.overall,
             immersion: selections.immersion,
-            theme: selections.theme
+            theme: selections.theme,
+            name
           })
         });
         if(!res.ok) throw new Error("request failed");
-        try{ localStorage.setItem(`submitted:${campusId}`, "1"); }catch(e){}
-        renderThanks();
-        if(typeof updateVoteTicker === "function") updateVoteTicker();
-        if(resultsUnlocked) renderLeaderboard();
+        const data = await res.json();
+        setVoterName(name);
+        setSubmission(campusId, {
+          pageId: existing ? existing.pageId : data.id,
+          overall: selections.overall,
+          immersion: selections.immersion,
+          theme: selections.theme,
+          name
+        });
+        renderRecap();
+        if(typeof refreshAll === "function") refreshAll();
       }catch(err){
         submitBtn.disabled = false;
-        submitBtn.textContent = "Submit rating";
+        submitBtn.textContent = existing ? "Save changes" : "Submit rating";
         const errEl = document.createElement("div");
         errEl.className = "survey-error";
         errEl.textContent = "Couldn't save that — check your connection and try again.";
@@ -732,14 +869,39 @@ function renderSurvey(campusId, campusLabel, theme){
     }
   }
 
-  function renderThanks(){
-    body.innerHTML = `<div class="survey-thanks">Thanks — your ratings for ${campusLabel} are in! 🎉</div>`;
+  function renderRecap(){
+    const existing = getSubmission(campusId);
+    body.innerHTML = "";
+    const recap = document.createElement("div");
+    recap.className = "survey-recap";
+    const scoreLine = document.createElement("div");
+    scoreLine.className = "survey-recap-scores";
+    scoreLine.textContent = `You rated ${campusLabel} — Overall ${existing.overall} · Immersion ${existing.immersion} · Theme ${existing.theme}`;
+    recap.appendChild(scoreLine);
+    body.appendChild(recap);
+
+    if(resultsUnlocked){
+      const lockNote = document.createElement("div");
+      lockNote.className = "survey-locked-note";
+      lockNote.textContent = "Ratings are locked — results are in!";
+      body.appendChild(lockNote);
+    } else {
+      const editBtn = document.createElement("button");
+      editBtn.className = "edit-btn";
+      editBtn.textContent = "Edit rating";
+      editBtn.addEventListener("click", () => renderForm(existing));
+      body.appendChild(editBtn);
+    }
   }
 
-  // Check if this device already submitted for this campus
-  let alreadySubmitted = false;
-  try{ alreadySubmitted = !!localStorage.getItem(`submitted:${campusId}`); }catch(e){}
-  if(alreadySubmitted){ renderThanks(); } else { renderForm(); }
+  const existing = getSubmission(campusId);
+  if(existing){
+    renderRecap();
+  } else if(resultsUnlocked){
+    body.innerHTML = `<div class="survey-locked-note">Ratings are now locked — results are in!</div>`;
+  } else {
+    renderForm(null);
+  }
 
   return wrap;
 }
@@ -813,48 +975,65 @@ function launchConfetti(){
   }
 }
 
-// ---------- LIVE VOTE TICKER ----------
+function escapeHtml(str){
+  return String(str).replace(/[&<>"']/g, ch => ({
+    "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+  }[ch]));
+}
+
+// ---------- SHARED DATA REFRESH ----------
 const voteTickerEl = document.getElementById("voteTicker");
-async function updateVoteTicker(){
+
+async function fetchTotals(){
   try{
     const res = await fetch("/api/leaderboard");
     if(!res.ok) throw new Error("bad response");
-    const { totals } = await res.json();
-    const totalVotes = Object.values(totals || {}).reduce((sum, c) => sum + c.count, 0);
-    voteTickerEl.style.display = "block";
-    voteTickerEl.innerHTML = totalVotes > 0
-      ? `<strong>${totalVotes}</strong> rating${totalVotes===1?"":"s"} submitted so far today`
-      : `No ratings submitted yet — be the first!`;
+    const data = await res.json();
+    return data.totals || {};
   }catch(e){
-    voteTickerEl.style.display = "none";
-  }
-}
-updateVoteTicker();
-setInterval(updateVoteTicker, 20000);
-
-async function computeLeaderboard(){
-  try{
-    const res = await fetch("/api/leaderboard");
-    if(!res.ok) throw new Error("bad response");
-    const { totals } = await res.json();
-    const results = CAMPUSES.map(c => {
-      const t = (totals && totals[c.id]) || { total: 0, count: 0 };
-      return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0 };
-    });
-    results.sort((a,b) => b.average - a.average);
-    return { results, storageAvailable: true };
-  }catch(e){
-    return { results: [], storageAvailable: false };
+    return null;
   }
 }
 
-async function renderLeaderboard(){
+function renderVoteTicker(totals){
+  if(!totals){ voteTickerEl.style.display = "none"; return; }
+  const totalVotes = Object.values(totals).reduce((sum, c) => sum + c.count, 0);
+  voteTickerEl.style.display = "block";
+  voteTickerEl.innerHTML = totalVotes > 0
+    ? `<strong>${totalVotes}</strong> rating${totalVotes===1?"":"s"} submitted so far today`
+    : `No ratings submitted yet — be the first!`;
+}
+
+function renderVoterNotes(totals){
+  CAMPUSES.forEach(c => {
+    const el = document.getElementById(`voter-note-${c.id}`);
+    if(!el) return;
+    const t = totals && totals[c.id];
+    if(!t || t.count === 0){ el.style.display = "none"; el.textContent = ""; return; }
+    const names = t.voters.map(v => v.name).filter(Boolean);
+    const shown = names.slice(0, 3);
+    const extra = t.count - shown.length;
+    let text = `🗳️ ${t.count} vote${t.count===1?"":"s"}`;
+    if(shown.length) text += ` — ${shown.join(", ")}`;
+    if(extra > 0) text += ` +${extra} more`;
+    el.textContent = text;
+    el.style.display = "block";
+  });
+}
+
+function buildResults(totals){
+  return CAMPUSES.map(c => {
+    const t = (totals && totals[c.id]) || { total: 0, count: 0, voters: [] };
+    return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0, voters: t.voters || [] };
+  }).sort((a,b) => b.average - a.average);
+}
+
+function renderLeaderboard(totals){
   if(!resultsUnlocked){
     lbWrap.innerHTML = "";
     return;
   }
-  const { results, storageAvailable } = await computeLeaderboard();
-  if(!storageAvailable){
+  if(!totals){
     lbWrap.innerHTML = `
       <div class="lb-card">
         <div class="lb-title">🏆 Final Results</div>
@@ -863,19 +1042,32 @@ async function renderLeaderboard(){
     `;
     return;
   }
-  const rows = results.map((r, i) => `
-    <div class="lb-row${i===0 ? ' first' : ''}">
-      <div class="lb-rank">${i+1}</div>
-      <div class="lb-info">
-        <div class="lb-campus">${r.label}</div>
-        <div class="lb-theme">${r.theme || ""}</div>
+  const results = buildResults(totals);
+  const rows = results.map((r, i) => {
+    const voterRows = r.voters.map(v => `
+      <div class="lb-voter-row">
+        <span>${escapeHtml(v.name || "Anonymous")}</span>
+        <span>${v.overall}/${v.immersion}/${v.theme}</span>
       </div>
-      <div class="lb-score">
-        <div class="lb-total">${r.count > 0 ? r.average.toFixed(1) : "—"}</div>
-        <div class="lb-count">${r.count} rating${r.count===1?"":"s"}</div>
+    `).join("");
+    return `
+      <div class="lb-row${i===0 ? ' first' : ''}">
+        <div class="lb-rank">${i+1}</div>
+        <div class="lb-info">
+          <div class="lb-campus">${r.label}</div>
+          <div class="lb-theme">${r.theme || ""}</div>
+        </div>
+        <div class="lb-score">
+          <div class="lb-total">${r.count > 0 ? r.average.toFixed(1) : "—"}</div>
+          <div class="lb-count">${r.count} rating${r.count===1?"":"s"}</div>
+        </div>
       </div>
-    </div>
-  `).join("");
+      ${r.voters.length ? `
+        <button class="lb-voters-toggle" data-target="lb-voters-${r.id}">Who voted, and how ▾</button>
+        <div class="lb-voters" id="lb-voters-${r.id}" style="display:none">${voterRows}</div>
+      ` : ""}
+    `;
+  }).join("");
 
   lbWrap.innerHTML = `
     <div class="lb-card">
@@ -889,10 +1081,26 @@ async function renderLeaderboard(){
     confettiFired = true;
     launchConfetti();
   }
-  document.getElementById("lbRefreshBtn").addEventListener("click", renderLeaderboard);
+  document.getElementById("lbRefreshBtn").addEventListener("click", refreshAll);
+  lbWrap.querySelectorAll(".lb-voters-toggle").forEach(btn => {
+    btn.addEventListener("click", () => {
+      const target = document.getElementById(btn.dataset.target);
+      if(!target) return;
+      const isHidden = target.style.display === "none";
+      target.style.display = isHidden ? "block" : "none";
+      btn.textContent = isHidden ? "Who voted, and how ▲" : "Who voted, and how ▾";
+    });
+  });
 }
 
-renderLeaderboard();
+async function refreshAll(){
+  const totals = await fetchTotals();
+  renderVoteTicker(totals);
+  renderVoterNotes(totals);
+  renderLeaderboard(totals);
+}
+refreshAll();
+setInterval(refreshAll, 20000);
 
 </script>
 </body>
