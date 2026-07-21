@@ -1080,7 +1080,7 @@ async function init(){
   function buildResults(totals){
     return CAMPUSES.map(c => {
       const t = (totals && totals[c.id]) || { total: 0, count: 0, voters: [] };
-      return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0, voters: t.voters || [] };
+      return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / (t.count * 3) : 0, voters: t.voters || [] };
     }).sort((a,b) => b.average - a.average);
   }
 
