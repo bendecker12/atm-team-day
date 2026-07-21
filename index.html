@@ -638,24 +638,12 @@ const CATEGORIES = [
   { key: "theme", label: "Theme" }
 ];
 
-const stops = [
-  { type: "point", time: "7:30 AM", label: "Leave from Central", theme: null, address: null },
-  { type: "drive", label: "≈ 1.5 hr drive" },
-  { type: "point", time: "9:00 – 10:00 AM", label: "Coffee — Laurennae", theme: null, address: "112 W Commercial St, Broken Arrow, OK" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "10:15 – 10:45 AM", label: "South Broken Arrow", theme: "Toy Story", address: "5801 S Elm Pl, Broken Arrow, OK 74011", campusId: "sba" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "11:00 – 11:30 AM", label: "Broken Arrow", theme: "Monsters Inc.", address: "2420 E Kenosha St, Broken Arrow, OK 74014", campusId: "ba" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "11:45 AM – 12:15 PM", label: "Catoosa", theme: "Finding Nemo", address: "19603 E Admiral Pl, Catoosa, OK 74015", campusId: "catoosa" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "12:30 – 1:30 PM", label: "Lunch — Main Street BA", theme: null, sublabel: "Andolinis or Dos Bandidos", address: "222 S Main St, Broken Arrow, OK 74012" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "1:45 – 2:15 PM", label: "Midtown", theme: "Aladdin", address: "7015 E 41st St, Tulsa, OK 74145", campusId: "midtown" },
-  { type: "drive", label: "≈ 15 min drive" },
-  { type: "point", time: "2:45 – 3:15 PM", label: "South Tulsa", theme: "Fairy Tales", address: "7071 East 121st St S, Bixby, OK 74008", campusId: "stulsa" },
-  { type: "point", time: "3:15 PM", label: "Drive home!", theme: null, address: null },
-];
+async function fetchAgenda(){
+  const res = await fetch("/api/agenda");
+  if(!res.ok) throw new Error("bad response");
+  const data = await res.json();
+  return data.stops || [];
+}
 
 const TOUR_DATE = { year: 2026, month: 7, day: 22 }; // Wednesday, July 22, 2026
 const RESULTS_UNLOCK = new Date(2026, 6, 22, 15, 15, 0); // 3:15 PM, end of final build stop
@@ -683,50 +671,9 @@ const isTourDay = now.getFullYear() === TOUR_DATE.year &&
 const nowMin = now.getHours()*60 + now.getMinutes();
 const resultsUnlocked = now >= RESULTS_UNLOCK;
 
-const pointStops = stops.filter(s => s.type === "point");
-let activeIndex = -1;
-let nextIndex = -1;
-
-if(isTourDay){
-  for(let i=0;i<pointStops.length;i++){
-    const s = pointStops[i].time;
-    const start = parseStartMinutes(s);
-    const end = parseEndMinutes(s);
-    if(start!==null && end!==null && nowMin >= start && nowMin <= end){
-      activeIndex = i;
-      break;
-    }
-  }
-  if(activeIndex === -1){
-    for(let i=0;i<pointStops.length;i++){
-      const start = parseStartMinutes(pointStops[i].time);
-      if(start!==null && nowMin < start){ nextIndex = i; break; }
-    }
-  }
-}
-
 const statusBar = document.getElementById("statusBar");
 const tourDateLabel = "Wednesday, July 22";
-
-if(resultsUnlocked){
-  statusBar.innerHTML = `<strong>Results are in</strong> — see the leaderboard below`;
-} else if(!isTourDay){
-  const todayIsBefore = now < new Date(TOUR_DATE.year, TOUR_DATE.month - 1, TOUR_DATE.day);
-  statusBar.innerHTML = todayIsBefore
-    ? `Tour day is <strong>${tourDateLabel}</strong> — live status will show up here that morning`
-    : `The <strong>${tourDateLabel}</strong> tour has passed — hope it was a great day!`;
-} else if(activeIndex !== -1){
-  statusBar.innerHTML = `You're at <strong>${pointStops[activeIndex].label}</strong> right now`;
-} else if(nextIndex !== -1){
-  statusBar.innerHTML = `Next up: <strong>${pointStops[nextIndex].label}</strong> at ${pointStops[nextIndex].time}`;
-} else if(pointStops.length && nowMin > parseStartMinutes(pointStops[pointStops.length-1].time)){
-  statusBar.innerHTML = `Tour's wrapped for the day — <strong>safe travels home!</strong>`;
-} else {
-  statusBar.innerHTML = `<strong>Tour day</strong> — check back once you're on the road`;
-}
-
 const routeEl = document.getElementById("route");
-let pointCounter = 0;
 
 // ---------- COUNTDOWN ----------
 const countdownEl = document.getElementById("countdownEl");
@@ -762,6 +709,18 @@ function getSubmission(campusId){
 function setSubmission(campusId, data){
   try{ localStorage.setItem(`submission:${campusId}`, JSON.stringify(data)); }catch(e){}
 }
+function getSessionId(){
+  try{
+    let id = localStorage.getItem("sessionId");
+    if(!id){
+      id = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      localStorage.setItem("sessionId", id);
+    }
+    return id;
+  }catch(e){ return null; }
+}
+
+let refreshAll = async function(){};
 
 function renderSurvey(campusId, campusLabel, theme){
   const wrap = document.createElement("div");
@@ -837,7 +796,8 @@ function renderSurvey(campusId, campusLabel, theme){
             overall: selections.overall,
             immersion: selections.immersion,
             theme: selections.theme,
-            name
+            name,
+            sessionId: getSessionId()
           })
         });
         if(!res.ok) throw new Error("request failed");
@@ -851,7 +811,7 @@ function renderSurvey(campusId, campusLabel, theme){
           name
         });
         renderRecap();
-        if(typeof refreshAll === "function") refreshAll();
+        refreshAll();
       }catch(err){
         submitBtn.disabled = false;
         submitBtn.textContent = existing ? "Save changes" : "Submit rating";
@@ -906,57 +866,10 @@ function renderSurvey(campusId, campusLabel, theme){
   return wrap;
 }
 
-stops.forEach((s) => {
- try {
-  const div = document.createElement("div");
-
-  if(s.type === "drive"){
-    div.className = "stop drive-only";
-    div.innerHTML = `
-      <div class="marker-col"><div class="dot"></div></div>
-      <div class="card">${s.label}</div>
-    `;
-    routeEl.appendChild(div);
-    return;
-  }
-
-  pointCounter++;
-  const idxAmongPoints = pointCounter - 1;
-  const isActive = idxAmongPoints === activeIndex;
-  const isDone = activeIndex !== -1 ? idxAmongPoints < activeIndex : (nextIndex !== -1 && idxAmongPoints < nextIndex);
-
-  div.className = "stop" + (isActive ? " active" : "") + (isDone ? " done" : "");
-
-  const mapsUrl = s.address ? `https://maps.apple.com/?q=${encodeURIComponent(s.address)}` : null;
-
-  div.innerHTML = `
-    <div class="marker-col"><div class="dot">${pointCounter}</div></div>
-    <div class="card">
-      <div class="time-row">
-        <span class="time">${s.time}${isActive ? '<span class="now-badge">Now</span>' : ''}</span>
-        ${s.theme ? `<span class="theme-badge">${s.theme}</span>` : ''}
-      </div>
-      <div class="campus">${s.label}</div>
-      ${s.sublabel ? `<div style="color:var(--paper-dim);font-size:13px;margin-bottom:6px;">${s.sublabel}</div>` : ''}
-      ${mapsUrl ? `<a class="addr" href="${mapsUrl}" target="_blank" rel="noopener">📍 ${s.address}</a>` : ''}
-    </div>
-  `;
-
-  if(s.campusId){
-    div.querySelector(".card").appendChild(renderSurvey(s.campusId, s.label, s.theme));
-  }
-
-  routeEl.appendChild(div);
- } catch(err){
-   console.error("Failed to render a stop:", err);
- }
-});
-
-// ---------- LEADERBOARD ----------
-const CAMPUSES = stops.filter(s => s.campusId).map(s => ({ id: s.campusId, label: s.label, theme: s.theme }));
+// ---------- LEADERBOARD / VOTE TICKER SHARED PIECES ----------
 const lbWrap = document.getElementById("leaderboardWrap");
+const voteTickerEl = document.getElementById("voteTicker");
 
-// ---------- CONFETTI ----------
 let confettiFired = false;
 function launchConfetti(){
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
@@ -981,9 +894,6 @@ function escapeHtml(str){
   }[ch]));
 }
 
-// ---------- SHARED DATA REFRESH ----------
-const voteTickerEl = document.getElementById("voteTicker");
-
 async function fetchTotals(){
   try{
     const res = await fetch("/api/leaderboard");
@@ -1004,104 +914,204 @@ function renderVoteTicker(totals){
     : `No ratings submitted yet — be the first!`;
 }
 
-function renderVoterNotes(totals){
-  CAMPUSES.forEach(c => {
-    const el = document.getElementById(`voter-note-${c.id}`);
-    if(!el) return;
-    const t = totals && totals[c.id];
-    if(!t || t.count === 0){ el.style.display = "none"; el.textContent = ""; return; }
-    const names = t.voters.map(v => v.name).filter(Boolean);
-    const shown = names.slice(0, 3);
-    const extra = t.count - shown.length;
-    let text = `🗳️ ${t.count} vote${t.count===1?"":"s"}`;
-    if(shown.length) text += ` — ${shown.join(", ")}`;
-    if(extra > 0) text += ` +${extra} more`;
-    el.textContent = text;
-    el.style.display = "block";
-  });
-}
-
-function buildResults(totals){
-  return CAMPUSES.map(c => {
-    const t = (totals && totals[c.id]) || { total: 0, count: 0, voters: [] };
-    return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0, voters: t.voters || [] };
-  }).sort((a,b) => b.average - a.average);
-}
-
-function renderLeaderboard(totals){
-  if(!resultsUnlocked){
-    lbWrap.innerHTML = "";
+// ---------- INIT: fetch agenda from Notion, then render everything that depends on it ----------
+async function init(){
+  let stops;
+  try{
+    stops = await fetchAgenda();
+  }catch(e){
+    statusBar.textContent = "Couldn't load the agenda — check your connection and refresh.";
     return;
   }
-  if(!totals){
+
+  const pointStops = stops.filter(s => s.type === "point");
+  let activeIndex = -1;
+  let nextIndex = -1;
+
+  if(isTourDay){
+    for(let i=0;i<pointStops.length;i++){
+      const s = pointStops[i].time;
+      const start = parseStartMinutes(s);
+      const end = parseEndMinutes(s);
+      if(start!==null && end!==null && nowMin >= start && nowMin <= end){
+        activeIndex = i;
+        break;
+      }
+    }
+    if(activeIndex === -1){
+      for(let i=0;i<pointStops.length;i++){
+        const start = parseStartMinutes(pointStops[i].time);
+        if(start!==null && nowMin < start){ nextIndex = i; break; }
+      }
+    }
+  }
+
+  if(resultsUnlocked){
+    statusBar.innerHTML = `<strong>Results are in</strong> — see the leaderboard below`;
+  } else if(!isTourDay){
+    const todayIsBefore = now < new Date(TOUR_DATE.year, TOUR_DATE.month - 1, TOUR_DATE.day);
+    statusBar.innerHTML = todayIsBefore
+      ? `Tour day is <strong>${tourDateLabel}</strong> — live status will show up here that morning`
+      : `The <strong>${tourDateLabel}</strong> tour has passed — hope it was a great day!`;
+  } else if(activeIndex !== -1){
+    statusBar.innerHTML = `You're at <strong>${pointStops[activeIndex].label}</strong> right now`;
+  } else if(nextIndex !== -1){
+    statusBar.innerHTML = `Next up: <strong>${pointStops[nextIndex].label}</strong> at ${pointStops[nextIndex].time}`;
+  } else if(pointStops.length && nowMin > parseStartMinutes(pointStops[pointStops.length-1].time)){
+    statusBar.innerHTML = `Tour's wrapped for the day — <strong>safe travels home!</strong>`;
+  } else {
+    statusBar.innerHTML = `<strong>Tour day</strong> — check back once you're on the road`;
+  }
+
+  let pointCounter = 0;
+  stops.forEach((s) => {
+   try {
+    const div = document.createElement("div");
+
+    if(s.type === "drive"){
+      div.className = "stop drive-only";
+      div.innerHTML = `
+        <div class="marker-col"><div class="dot"></div></div>
+        <div class="card">${s.label}</div>
+      `;
+      routeEl.appendChild(div);
+      return;
+    }
+
+    pointCounter++;
+    const idxAmongPoints = pointCounter - 1;
+    const isActive = idxAmongPoints === activeIndex;
+    const isDone = activeIndex !== -1 ? idxAmongPoints < activeIndex : (nextIndex !== -1 && idxAmongPoints < nextIndex);
+
+    div.className = "stop" + (isActive ? " active" : "") + (isDone ? " done" : "");
+
+    const mapsUrl = s.address ? `https://maps.apple.com/?q=${encodeURIComponent(s.address)}` : null;
+
+    div.innerHTML = `
+      <div class="marker-col"><div class="dot">${pointCounter}</div></div>
+      <div class="card">
+        <div class="time-row">
+          <span class="time">${s.time}${isActive ? '<span class="now-badge">Now</span>' : ''}</span>
+          ${s.theme ? `<span class="theme-badge">${s.theme}</span>` : ''}
+        </div>
+        <div class="campus">${s.label}</div>
+        ${s.sublabel ? `<div style="color:var(--dim);font-size:13px;margin-bottom:6px;">${s.sublabel}</div>` : ''}
+        ${mapsUrl ? `<a class="addr" href="${mapsUrl}" target="_blank" rel="noopener">📍 ${s.address}</a>` : ''}
+      </div>
+    `;
+
+    if(s.campusId){
+      div.querySelector(".card").appendChild(renderSurvey(s.campusId, s.label, s.theme));
+    }
+
+    routeEl.appendChild(div);
+   } catch(err){
+     console.error("Failed to render a stop:", err);
+   }
+  });
+
+  const CAMPUSES = stops.filter(s => s.campusId).map(s => ({ id: s.campusId, label: s.label, theme: s.theme }));
+
+  function renderVoterNotes(totals){
+    CAMPUSES.forEach(c => {
+      const el = document.getElementById(`voter-note-${c.id}`);
+      if(!el) return;
+      const t = totals && totals[c.id];
+      if(!t || t.count === 0){ el.style.display = "none"; el.textContent = ""; return; }
+      const names = t.voters.map(v => v.name).filter(Boolean);
+      const shown = names.slice(0, 3);
+      const extra = t.count - shown.length;
+      let text = `🗳️ ${t.count} vote${t.count===1?"":"s"}`;
+      if(shown.length) text += ` — ${shown.join(", ")}`;
+      if(extra > 0) text += ` +${extra} more`;
+      el.textContent = text;
+      el.style.display = "block";
+    });
+  }
+
+  function buildResults(totals){
+    return CAMPUSES.map(c => {
+      const t = (totals && totals[c.id]) || { total: 0, count: 0, voters: [] };
+      return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0, voters: t.voters || [] };
+    }).sort((a,b) => b.average - a.average);
+  }
+
+  function renderLeaderboard(totals){
+    if(!resultsUnlocked){
+      lbWrap.innerHTML = "";
+      return;
+    }
+    if(!totals){
+      lbWrap.innerHTML = `
+        <div class="lb-card">
+          <div class="lb-title">🏆 Final Results</div>
+          <div class="lb-sub">Couldn't load results right now — check your connection and refresh.</div>
+        </div>
+      `;
+      return;
+    }
+    const results = buildResults(totals);
+    const rows = results.map((r, i) => {
+      const voterRows = r.voters.map(v => `
+        <div class="lb-voter-row">
+          <span>${escapeHtml(v.name || "Anonymous")}</span>
+          <span>${v.overall}/${v.immersion}/${v.theme}</span>
+        </div>
+      `).join("");
+      return `
+        <div class="lb-row${i===0 ? ' first' : ''}">
+          <div class="lb-rank">${i+1}</div>
+          <div class="lb-info">
+            <div class="lb-campus">${r.label}</div>
+            <div class="lb-theme">${r.theme || ""}</div>
+          </div>
+          <div class="lb-score">
+            <div class="lb-total">${r.count > 0 ? r.average.toFixed(1) : "—"}</div>
+            <div class="lb-count">${r.count} rating${r.count===1?"":"s"}</div>
+          </div>
+        </div>
+        ${r.voters.length ? `
+          <button class="lb-voters-toggle" data-target="lb-voters-${r.id}">Who voted, and how ▾</button>
+          <div class="lb-voters" id="lb-voters-${r.id}" style="display:none">${voterRows}</div>
+        ` : ""}
+      `;
+    }).join("");
+
     lbWrap.innerHTML = `
       <div class="lb-card">
         <div class="lb-title">🏆 Final Results</div>
-        <div class="lb-sub">Couldn't load results right now — check your connection and refresh.</div>
+        <div class="lb-sub">Ranked by average score across Overall Excellence, Immersion &amp; Theme</div>
+        ${rows}
+        <button class="lb-refresh" id="lbRefreshBtn">Refresh results</button>
       </div>
     `;
-    return;
-  }
-  const results = buildResults(totals);
-  const rows = results.map((r, i) => {
-    const voterRows = r.voters.map(v => `
-      <div class="lb-voter-row">
-        <span>${escapeHtml(v.name || "Anonymous")}</span>
-        <span>${v.overall}/${v.immersion}/${v.theme}</span>
-      </div>
-    `).join("");
-    return `
-      <div class="lb-row${i===0 ? ' first' : ''}">
-        <div class="lb-rank">${i+1}</div>
-        <div class="lb-info">
-          <div class="lb-campus">${r.label}</div>
-          <div class="lb-theme">${r.theme || ""}</div>
-        </div>
-        <div class="lb-score">
-          <div class="lb-total">${r.count > 0 ? r.average.toFixed(1) : "—"}</div>
-          <div class="lb-count">${r.count} rating${r.count===1?"":"s"}</div>
-        </div>
-      </div>
-      ${r.voters.length ? `
-        <button class="lb-voters-toggle" data-target="lb-voters-${r.id}">Who voted, and how ▾</button>
-        <div class="lb-voters" id="lb-voters-${r.id}" style="display:none">${voterRows}</div>
-      ` : ""}
-    `;
-  }).join("");
-
-  lbWrap.innerHTML = `
-    <div class="lb-card">
-      <div class="lb-title">🏆 Final Results</div>
-      <div class="lb-sub">Ranked by average score across Overall Excellence, Immersion &amp; Theme</div>
-      ${rows}
-      <button class="lb-refresh" id="lbRefreshBtn">Refresh results</button>
-    </div>
-  `;
-  if(!confettiFired && results.length && results[0].count > 0){
-    confettiFired = true;
-    launchConfetti();
-  }
-  document.getElementById("lbRefreshBtn").addEventListener("click", refreshAll);
-  lbWrap.querySelectorAll(".lb-voters-toggle").forEach(btn => {
-    btn.addEventListener("click", () => {
-      const target = document.getElementById(btn.dataset.target);
-      if(!target) return;
-      const isHidden = target.style.display === "none";
-      target.style.display = isHidden ? "block" : "none";
-      btn.textContent = isHidden ? "Who voted, and how ▲" : "Who voted, and how ▾";
+    if(!confettiFired && results.length && results[0].count > 0){
+      confettiFired = true;
+      launchConfetti();
+    }
+    document.getElementById("lbRefreshBtn").addEventListener("click", refreshAll);
+    lbWrap.querySelectorAll(".lb-voters-toggle").forEach(btn => {
+      btn.addEventListener("click", () => {
+        const target = document.getElementById(btn.dataset.target);
+        if(!target) return;
+        const isHidden = target.style.display === "none";
+        target.style.display = isHidden ? "block" : "none";
+        btn.textContent = isHidden ? "Who voted, and how ▲" : "Who voted, and how ▾";
+      });
     });
-  });
+  }
+
+  refreshAll = async function(){
+    const totals = await fetchTotals();
+    renderVoteTicker(totals);
+    renderVoterNotes(totals);
+    renderLeaderboard(totals);
+  };
+  refreshAll();
+  setInterval(refreshAll, 20000);
 }
 
-async function refreshAll(){
-  const totals = await fetchTotals();
-  renderVoteTicker(totals);
-  renderVoterNotes(totals);
-  renderLeaderboard(totals);
-}
-refreshAll();
-setInterval(refreshAll, 20000);
-
+init();
 </script>
 </body>
 </html>
