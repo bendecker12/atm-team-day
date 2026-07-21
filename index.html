@@ -15,6 +15,7 @@
     --white: #FFFFFF;
     --dim: #E4E6F0;
     --shadow: rgba(0,0,0,0.5);
+    --gold: #FFC94A;
   }
 
   *{ box-sizing: border-box; }
@@ -455,6 +456,12 @@
   }
   .name-input:focus{ outline: none; border-color: var(--blue); }
   .name-input::placeholder{ color: rgba(228,230,240,0.4); }
+  .name-note{
+    font-size: 11px;
+    color: var(--dim);
+    font-style: italic;
+    margin-top: 2px;
+  }
 
   .survey-recap{ text-align:center; }
   .survey-recap-scores{
@@ -552,6 +559,14 @@
     border-bottom: 1px solid rgba(255,255,255,0.14);
   }
   .lb-row:last-child{ border-bottom: none; }
+  .lb-row.first{
+    background: linear-gradient(90deg, rgba(255,201,74,0.22), rgba(255,201,74,0.06));
+    box-shadow: inset 0 0 0 1px rgba(255,201,74,0.45);
+    border-radius: 10px;
+    margin: 0 -20px;
+    padding: 12px 20px;
+    border-bottom: none;
+  }
   .lb-rank{
     font-family:'Anton', sans-serif;
     font-weight: 400;
@@ -561,7 +576,7 @@
     text-align:center;
     flex-shrink: 0;
   }
-  .lb-row.first .lb-rank{ color: var(--white); font-size: 28px; text-shadow: 0 0 10px var(--blue-glow); }
+  .lb-row.first .lb-rank{ color: var(--gold); font-size: 28px; text-shadow: 0 0 10px rgba(255,201,74,0.6); }
   .lb-info{ flex: 1; min-width:0; }
   .lb-campus{
     font-family:'Anton', sans-serif;
@@ -733,11 +748,39 @@ function updateCountdown(){
 updateCountdown();
 setInterval(updateCountdown, 1000);
 
+const PLACEHOLDER_NAMES = [
+  "Aladdin", "Princess Jasmine", "Buzz Lightyear", "Woody", "Snow White",
+  "Prince Charming", "Cinderella", "Simba", "Nala", "Ariel",
+  "Belle", "Mulan", "Moana", "Elsa", "Anna",
+  "Rapunzel", "Flynn Rider", "Tiana", "Peter Pan", "Wendy Darling",
+  "Nemo", "Dory", "Mike Wazowski", "Sulley", "Remy",
+  "WALL-E", "Eve", "Merida", "Hercules", "Pocahontas"
+];
+function randomPlaceholderName(){
+  return PLACEHOLDER_NAMES[Math.floor(Math.random() * PLACEHOLDER_NAMES.length)];
+}
 function getVoterName(){
-  try{ return localStorage.getItem("voterName") || ""; }catch(e){ return ""; }
+  try{
+    let name = localStorage.getItem("voterName");
+    if(!name){
+      name = randomPlaceholderName();
+      localStorage.setItem("voterName", name);
+    }
+    return name;
+  }catch(e){
+    return randomPlaceholderName();
+  }
 }
 function setVoterName(name){
   try{ if(name) localStorage.setItem("voterName", name); }catch(e){}
+}
+function hasAnyPriorSubmission(){
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      if(localStorage.key(i).startsWith("submission:")) return true;
+    }
+  }catch(e){}
+  return false;
 }
 function getSubmission(campusId){
   try{
@@ -761,6 +804,11 @@ function getSessionId(){
 
 let refreshAll = async function(){};
 
+// Name rows currently shown on not-yet-submitted forms, waiting on this
+// browser's first-ever vote. Cleared out the moment any of them submits,
+// so name only ever has to be entered once per browser.
+const nameRowsAwaitingFirstVote = [];
+
 function renderSurvey(campusId, campusLabel, theme){
   const wrap = document.createElement("div");
   wrap.className = "survey";
@@ -779,20 +827,29 @@ function renderSurvey(campusId, campusLabel, theme){
       theme: existing ? existing.theme : undefined
     };
 
-    const nameRow = document.createElement("div");
-    nameRow.className = "name-row";
-    const nameLabel = document.createElement("label");
-    nameLabel.className = "name-label";
-    nameLabel.textContent = "Your name (optional)";
-    const nameInput = document.createElement("input");
-    nameInput.type = "text";
-    nameInput.className = "name-input";
-    nameInput.maxLength = 60;
-    nameInput.placeholder = "e.g. Ben";
-    nameInput.value = existing ? (existing.name || "") : getVoterName();
-    nameRow.appendChild(nameLabel);
-    nameRow.appendChild(nameInput);
-    body.appendChild(nameRow);
+    const showNameField = !existing && !hasAnyPriorSubmission();
+    let nameInput = null;
+    let nameRowEl = null;
+    if(showNameField){
+      nameRowEl = document.createElement("div");
+      nameRowEl.className = "name-row";
+      const nameLabel = document.createElement("label");
+      nameLabel.className = "name-label";
+      nameLabel.textContent = "Your name";
+      nameInput = document.createElement("input");
+      nameInput.type = "text";
+      nameInput.className = "name-input";
+      nameInput.maxLength = 60;
+      nameInput.value = getVoterName();
+      const nameNote = document.createElement("div");
+      nameNote.className = "name-note";
+      nameNote.textContent = "This name will be used for all your other votes too — you only need to enter it once.";
+      nameRowEl.appendChild(nameLabel);
+      nameRowEl.appendChild(nameInput);
+      nameRowEl.appendChild(nameNote);
+      body.appendChild(nameRowEl);
+      nameRowsAwaitingFirstVote.push(nameRowEl);
+    }
 
     CATEGORIES.forEach(cat => {
       const row = document.createElement("div");
@@ -824,7 +881,7 @@ function renderSurvey(campusId, campusLabel, theme){
     submitBtn.addEventListener("click", async () => {
       submitBtn.disabled = true;
       submitBtn.textContent = existing ? "Saving…" : "Submitting…";
-      const name = nameInput.value.trim();
+      const name = nameInput ? (nameInput.value.trim() || getVoterName()) : getVoterName();
       try{
         const res = await fetch("/api/rate", {
           method: existing ? "PATCH" : "POST",
@@ -849,6 +906,10 @@ function renderSurvey(campusId, campusLabel, theme){
           theme: selections.theme,
           name
         });
+        if(nameRowEl){
+          nameRowsAwaitingFirstVote.forEach(el => { el.style.display = "none"; });
+          nameRowsAwaitingFirstVote.length = 0;
+        }
         renderRecap();
         refreshAll();
       }catch(err){
@@ -988,9 +1049,11 @@ async function init(){
   // Once every stop's start time has passed (e.g. after the single-point-in-time
   // "Drive back to Central!" stop), nothing matches the active-window or next-stop
   // checks above. Treat the last stop as the active one so the timeline still
-  // reflects "here's where the day stands" instead of going blank.
+  // reflects "here's where the day stands" — but only for a couple hours after
+  // the tour ends; by 5 PM everyone should be home, so drop the highlight.
+  const DRIVE_HOME_ACTIVE_CUTOFF_MIN = 17 * 60; // 5:00 PM
   let displayActiveIndex = activeIndex;
-  if(isTourDay && displayActiveIndex === -1 && nextIndex === -1 && pointStops.length){
+  if(isTourDay && displayActiveIndex === -1 && nextIndex === -1 && pointStops.length && nowMin < DRIVE_HOME_ACTIVE_CUTOFF_MIN){
     displayActiveIndex = pointStops.length - 1;
   }
 
@@ -1137,7 +1200,13 @@ async function init(){
       confettiFired = true;
       launchConfetti();
     }
-    document.getElementById("lbRefreshBtn").addEventListener("click", refreshAll);
+    document.getElementById("lbRefreshBtn").addEventListener("click", async () => {
+      const freshTotals = await refreshAll();
+      const freshResults = buildResults(freshTotals);
+      if(freshResults.length && freshResults[0].count > 0){
+        launchConfetti();
+      }
+    });
     lbWrap.querySelectorAll(".lb-voters-toggle").forEach(btn => {
       btn.addEventListener("click", () => {
         const target = document.getElementById(btn.dataset.target);
@@ -1154,6 +1223,7 @@ async function init(){
     renderVoteTicker(totals);
     renderVoterNotes(totals);
     renderLeaderboard(totals);
+    return totals;
   };
   refreshAll();
   setInterval(refreshAll, 20000);
