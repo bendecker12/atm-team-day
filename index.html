@@ -87,7 +87,8 @@
     text-align: center;
     overflow: hidden;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.10), transparent 55%),
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.14), transparent 55%),
+      repeating-conic-gradient(from 0deg at 50% -30%, rgba(0,168,216,0.30) 0deg 3deg, transparent 3deg 11deg),
       var(--bg);
   }
   .hero .eyebrow{
@@ -98,15 +99,25 @@
     text-transform: uppercase;
     font-size: 13px;
     margin: 0 0 16px;
+    position: relative;
+    z-index: 1;
   }
 
-  .atm-logo{
-    display: block;
+  .atm-logo-wrap{
     width: 100%;
     max-width: 560px;
     margin: 0 auto;
-    height: auto;
-    border-radius: 6px;
+    aspect-ratio: 1000 / 425;
+    overflow: hidden;
+    position: relative;
+    z-index: 1;
+  }
+  .atm-logo{
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    object-position: center 70%;
   }
 
   .hero-subtitle{
@@ -693,7 +704,9 @@
 
   <div class="hero">
     <p class="eyebrow">Generosity and Experience — Team Day</p>
-    <img class="atm-logo" src="https://cms-images.life.church/lc-site/pages/atm/2026/atm-opengraph-fb-2.jpg?w=1000&amp;h=345&amp;fit=crop&amp;crop=top" alt="At the Movies">
+    <div class="atm-logo-wrap">
+      <img class="atm-logo" src="https://cms-images.life.church/lc-site/pages/atm/2026/atm26_SST-Foreground-Image-Web.png?auto=format,compress&amp;fm=webp&amp;w=1000&amp;q=80" alt="At the Movies">
+    </div>
     <h1 class="hero-subtitle">Tulsa Tour</h1>
     <p class="hero-date" id="heroDate"></p>
     <p class="hero-footnote">Tap any address to route there.</p>
