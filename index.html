@@ -4,18 +4,41 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>ATM Tulsa Tour 2026</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
+  @font-face{
+    font-family:'Proxima Nova';
+    src:url('https://interactivefonts.life.church/proximanova-regular-webfont.woff2') format('woff2'),
+        url('https://interactivefonts.life.church/proximanova-regular-webfont.woff') format('woff');
+    font-weight:400; font-style:normal; font-display:swap;
+  }
+  @font-face{
+    font-family:'Proxima Nova';
+    src:url('https://interactivefonts.life.church/proximanova-semibold-webfont.woff2') format('woff2'),
+        url('https://interactivefonts.life.church/proximanova-semibold-webfont.woff') format('woff');
+    font-weight:600; font-style:normal; font-display:swap;
+  }
+  @font-face{
+    font-family:'Proxima Nova';
+    src:url('https://interactivefonts.life.church/proximanova-bold-webfont.woff2') format('woff2'),
+        url('https://interactivefonts.life.church/proximanova-bold-webfont.woff') format('woff');
+    font-weight:700; font-style:normal; font-display:swap;
+  }
+  @font-face{
+    font-family:'Proxima Nova';
+    src:url('https://interactivefonts.life.church/proximanova-black-webfont.woff2') format('woff2'),
+        url('https://interactivefonts.life.church/proximanova-black-webfont.woff') format('woff');
+    font-weight:900; font-style:normal; font-display:swap;
+  }
+
   :root{
     --bg: #000000;
     --bg-card: #1C1E24;
-    --blue: #2451FF;
-    --blue-glow: rgba(36,81,255,0.55);
+    --blue: #00A8D8;
+    --blue-glow: rgba(0,168,216,0.55);
     --white: #FFFFFF;
     --dim: #E4E6F0;
     --shadow: rgba(0,0,0,0.5);
-    --gold: #FFC94A;
+    --gold: #FFBA0C;
   }
 
   *{ box-sizing: border-box; }
@@ -24,7 +47,7 @@
   body{
     background: var(--bg);
     color: var(--white);
-    font-family: 'Oswald', 'Arial Narrow', sans-serif;
+    font-family: 'Proxima Nova', 'Helvetica Neue', Helvetica, Arial, sans-serif;
     -webkit-font-smoothing: antialiased;
     min-height: 100vh;
     padding: 0 0 80px;
@@ -47,12 +70,12 @@
     position: sticky;
     top: 0;
     z-index: 1000;
-    background: #FFC94A;
+    background: var(--gold);
     color: #000;
     text-align: center;
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 12px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
     letter-spacing: 0.04em;
     padding: 6px 12px;
   }
@@ -60,92 +83,98 @@
   /* ---------- HERO ---------- */
   .hero{
     position: relative;
-    padding: 60px 24px 36px;
+    padding: 28px 24px 32px;
     text-align: center;
     overflow: hidden;
     background:
-      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.14), transparent 55%),
-      repeating-conic-gradient(from 0deg at 50% -30%, rgba(36,81,255,0.30) 0deg 3deg, transparent 3deg 11deg),
+      radial-gradient(ellipse at 50% 0%, rgba(255,255,255,0.10), transparent 55%),
       var(--bg);
   }
   .hero .eyebrow{
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Proxima Nova', sans-serif;
     font-weight: 600;
     color: var(--white);
     letter-spacing: 0.14em;
     text-transform: uppercase;
-    font-size: 12px;
-    margin: 0 0 4px;
+    font-size: 13px;
+    margin: 0 0 16px;
   }
 
-  .banner{
-    display: inline-block;
-    transform: rotate(-2.5deg);
-    background: var(--bg);
-    border-top: 3px solid var(--white);
-    border-bottom: 3px solid var(--white);
-    padding: 20px 30px 14px;
-    margin: 10px 0 24px;
-    max-width: 100%;
-  }
-  .hero h1{
-    font-family: 'Anton', 'Oswald', sans-serif;
-    font-weight: 400;
-    font-size: clamp(40px, 9vw, 68px);
-    line-height: 0.95;
-    letter-spacing: 0.01em;
-    margin: 0;
-    color: var(--white);
-    -webkit-text-stroke: 1.5px var(--blue);
-    text-shadow: 0 0 22px var(--blue-glow), 0 0 6px var(--blue-glow);
-  }
-  .hero h1 span{ display:block; color: var(--white); -webkit-text-stroke: 1.5px var(--blue); }
-
-  .hero p.sub{
-    max-width: 480px;
+  .atm-logo{
+    display: block;
+    width: 100%;
+    max-width: 560px;
     margin: 0 auto;
-    color: var(--white);
-    font-size: 16px;
-    line-height: 1.5;
+    height: auto;
+    border-radius: 6px;
+  }
+
+  .hero-subtitle{
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 900;
+    font-size: clamp(26px, 7vw, 40px);
+    line-height: 1;
     letter-spacing: 0.01em;
+    margin: 18px 0 0;
+    color: var(--white);
+    -webkit-text-stroke: 1.2px var(--blue);
+    text-shadow: 0 0 18px var(--blue-glow), 0 0 6px var(--blue-glow);
+  }
+
+  .hero-date{
+    margin: 12px 0 0;
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 600;
+    font-size: 16px;
+    color: var(--white);
+    letter-spacing: 0.02em;
+  }
+
+  .hero-footnote{
+    margin: 14px 0 0;
+    color: var(--dim);
+    font-size: 12px;
+    font-style: italic;
+    opacity: 0.75;
   }
 
   /* ---------- STATUS BAR ---------- */
-  .status{
+  .day-banner{
     max-width: 620px;
     margin: 28px auto 0;
-    padding: 14px 20px;
+    padding: 18px 20px;
     background: var(--bg-card);
     border-radius: 10px;
     border: 1px solid rgba(255,255,255,0.16);
-    text-align: center;
-    font-size: 14px;
-    color: var(--dim);
-    letter-spacing: 0.02em;
     position: relative;
     z-index: 1;
+  }
+  .status{
+    text-align: center;
+    font-size: 15px;
+    color: var(--dim);
+    letter-spacing: 0.02em;
   }
   .status strong{ color: var(--white); font-weight: 600; text-shadow: 0 0 10px var(--blue-glow); }
 
   .countdown{
-    max-width: 620px;
-    margin: 10px auto 0;
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px dashed rgba(255,255,255,0.14);
     text-align: center;
-    font-family: 'Anton', sans-serif;
-    font-weight: 400;
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 22px;
     letter-spacing: 0.04em;
     color: var(--white);
     text-shadow: 0 0 12px var(--blue-glow);
     display: none;
-    position: relative;
-    z-index: 1;
   }
   .countdown .cd-label{
     display:block;
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Proxima Nova', sans-serif;
     font-weight: 600;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.12em;
     text-transform: uppercase;
     color: var(--dim);
@@ -153,15 +182,12 @@
   }
 
   .vote-ticker{
-    max-width: 620px;
-    margin: 12px auto 0;
+    margin-top: 8px;
     text-align: center;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--dim);
     letter-spacing: 0.04em;
     display: none;
-    position: relative;
-    z-index: 1;
   }
   .vote-ticker strong{ color: var(--white); }
 
@@ -224,14 +250,14 @@
   .stop:last-child .marker-col::before{ display:none; }
 
   .dot{
-    width: 30px; height: 30px;
+    width: 32px; height: 32px;
     border-radius: 50%;
     background: var(--bg-card);
     border: 3px solid var(--dim);
     display:flex; align-items:center; justify-content:center;
-    font-family:'Anton', sans-serif;
-    font-weight:400;
-    font-size: 14px;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight:900;
+    font-size: 15px;
     color: var(--white);
     z-index: 2;
     flex-shrink: 0;
@@ -240,7 +266,7 @@
     border-color: var(--blue);
     background: var(--blue);
     color: var(--white);
-    box-shadow: 0 0 0 6px rgba(36,81,255,0.25), 0 0 14px var(--blue-glow);
+    box-shadow: 0 0 0 6px rgba(0,168,216,0.25), 0 0 14px var(--blue-glow);
   }
   .stop.done .dot{
     border-color: var(--dim);
@@ -264,7 +290,7 @@
   }
   .stop.active .card{
     border-color: var(--blue);
-    box-shadow: 0 6px 16px var(--shadow), 0 0 18px rgba(36,81,255,0.25);
+    box-shadow: 0 6px 16px var(--shadow), 0 0 18px rgba(0,168,216,0.25);
     transform: translateX(2px);
   }
   .stop.drive-only{ padding-bottom: 0; }
@@ -296,9 +322,9 @@
   .stop.active .time{ color: var(--white); text-shadow: 0 0 8px var(--blue-glow); }
 
   .theme-badge{
-    font-family: 'Oswald', sans-serif;
+    font-family: 'Proxima Nova', sans-serif;
     font-weight: 700;
-    font-size: 12px;
+    font-size: 13px;
     letter-spacing: 0.04em;
     text-transform: uppercase;
     color: var(--white);
@@ -309,15 +335,15 @@
   }
 
   .campus{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 25px;
     letter-spacing: 0.01em;
     margin: 6px 0 4px;
   }
 
   .addr{
-    font-size: 13px;
+    font-size: 14px;
     color: var(--dim);
     text-decoration: none;
     display:inline-flex;
@@ -330,7 +356,7 @@
   .now-badge{
     display:inline-block;
     margin-left: 10px;
-    font-size: 11px;
+    font-size: 12px;
     letter-spacing: 0.08em;
     text-transform: uppercase;
     color: var(--white);
@@ -348,9 +374,9 @@
     border-top: 1px dashed rgba(255,255,255,0.22);
   }
   .survey-title{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
-    font-size: 15px;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
     letter-spacing: 0.03em;
     color: var(--white);
     margin-bottom: 10px;
@@ -364,7 +390,7 @@
     flex-wrap: wrap;
   }
   .cat-label{
-    font-size: 13px;
+    font-size: 14px;
     color: var(--dim);
     min-width: 110px;
   }
@@ -373,14 +399,14 @@
     gap: 6px;
   }
   .scale button{
-    width: 30px; height: 30px;
+    width: 32px; height: 32px;
     border-radius: 50%;
     border: 2px solid rgba(255,255,255,0.25);
     background: transparent;
     color: var(--dim);
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 13px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 700;
+    font-size: 14px;
     cursor: pointer;
     transition: all .15s ease;
   }
@@ -399,9 +425,9 @@
     border: none;
     background: var(--blue);
     color: var(--white);
-    font-family: 'Oswald', sans-serif;
-    font-weight: 600;
-    font-size: 14px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 700;
+    font-size: 15px;
     letter-spacing: 0.03em;
     text-transform: uppercase;
     cursor: pointer;
@@ -412,23 +438,14 @@
     color: var(--dim);
     cursor: not-allowed;
   }
-  .survey-thanks{
-    text-align:center;
-    font-style: italic;
-    font-weight: 600;
-    color: var(--white);
-    font-size: 15px;
-    padding: 6px 0;
-    text-shadow: 0 0 8px var(--blue-glow);
-  }
   .survey-error{
     text-align:center;
     color: #FF5A5A;
-    font-size: 12px;
+    font-size: 13px;
     margin-top: 6px;
   }
   .voter-note{
-    font-size: 12px;
+    font-size: 13px;
     color: var(--dim);
     font-style: italic;
     margin-bottom: 10px;
@@ -441,7 +458,7 @@
     margin-bottom: 12px;
   }
   .name-label{
-    font-size: 12px;
+    font-size: 13px;
     color: var(--dim);
     letter-spacing: 0.02em;
   }
@@ -451,13 +468,13 @@
     border: 1px solid rgba(255,255,255,0.25);
     background: rgba(255,255,255,0.05);
     color: var(--white);
-    font-family: 'Oswald', sans-serif;
-    font-size: 14px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-size: 15px;
   }
   .name-input:focus{ outline: none; border-color: var(--blue); }
   .name-input::placeholder{ color: rgba(228,230,240,0.4); }
   .name-note{
-    font-size: 11px;
+    font-size: 12px;
     color: var(--dim);
     font-style: italic;
     margin-top: 2px;
@@ -467,7 +484,7 @@
   .survey-recap-scores{
     font-weight: 600;
     color: var(--white);
-    font-size: 14px;
+    font-size: 15px;
     padding: 6px 0;
   }
   .edit-btn{
@@ -478,8 +495,8 @@
     border: 1px solid rgba(255,255,255,0.25);
     background: transparent;
     color: var(--dim);
-    font-family: 'Oswald', sans-serif;
-    font-size: 12px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-size: 13px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     cursor: pointer;
@@ -488,7 +505,7 @@
   .survey-locked-note{
     text-align:center;
     color: var(--dim);
-    font-size: 13px;
+    font-size: 14px;
     font-style: italic;
     padding: 6px 0;
   }
@@ -502,8 +519,8 @@
     border: none;
     background: transparent;
     color: var(--dim);
-    font-family: 'Oswald', sans-serif;
-    font-size: 11px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-size: 12px;
     letter-spacing: 0.03em;
     cursor: pointer;
   }
@@ -517,9 +534,44 @@
   .lb-voter-row{
     display:flex;
     justify-content: space-between;
-    font-size: 12px;
+    font-size: 13px;
     color: var(--dim);
     padding: 3px 0;
+  }
+
+  /* ---------- VOTING HELPER ---------- */
+  .voting-helper{
+    max-width: 620px;
+    margin: 16px auto 0;
+    padding: 16px 20px;
+    background: var(--bg-card);
+    border-radius: 10px;
+    border: 1px solid rgba(255,255,255,0.14);
+    position: relative;
+    z-index: 1;
+  }
+  .voting-helper-title{
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  .voting-helper-list{
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    font-size: 14px;
+    color: var(--dim);
+  }
+  .voting-helper-list strong{
+    color: var(--white);
+    min-width: 16px;
+    display: inline-block;
+    margin-right: 6px;
   }
 
   /* ---------- LEADERBOARD ---------- */
@@ -535,11 +587,11 @@
     border: 2px solid var(--blue);
     border-radius: 14px;
     padding: 22px 20px;
-    box-shadow: 0 8px 24px var(--shadow), 0 0 24px rgba(36,81,255,0.2);
+    box-shadow: 0 8px 24px var(--shadow), 0 0 24px rgba(0,168,216,0.2);
   }
   .lb-title{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 28px;
     letter-spacing: 0.02em;
     text-align: center;
@@ -548,7 +600,7 @@
   .lb-sub{
     text-align:center;
     color: var(--dim);
-    font-size: 13px;
+    font-size: 14px;
     margin: 0 0 20px;
   }
   .lb-row{
@@ -560,32 +612,32 @@
   }
   .lb-row:last-child{ border-bottom: none; }
   .lb-row.first{
-    background: linear-gradient(90deg, rgba(255,201,74,0.22), rgba(255,201,74,0.06));
-    box-shadow: inset 0 0 0 1px rgba(255,201,74,0.45);
+    background: linear-gradient(90deg, rgba(255,186,12,0.22), rgba(255,186,12,0.06));
+    box-shadow: inset 0 0 0 1px rgba(255,186,12,0.45);
     border-radius: 10px;
     margin: 0 -20px;
     padding: 12px 20px;
     border-bottom: none;
   }
   .lb-rank{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 22px;
     color: var(--dim);
     width: 28px;
     text-align:center;
     flex-shrink: 0;
   }
-  .lb-row.first .lb-rank{ color: var(--gold); font-size: 28px; text-shadow: 0 0 10px rgba(255,201,74,0.6); }
+  .lb-row.first .lb-rank{ color: var(--gold); font-size: 28px; text-shadow: 0 0 10px rgba(255,186,12,0.6); }
   .lb-info{ flex: 1; min-width:0; }
   .lb-campus{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 18px;
     letter-spacing: 0.01em;
   }
   .lb-theme{
-    font-size: 12px;
+    font-size: 13px;
     color: var(--dim);
     font-style: italic;
   }
@@ -594,14 +646,14 @@
     flex-shrink: 0;
   }
   .lb-total{
-    font-family:'Anton', sans-serif;
-    font-weight: 400;
+    font-family:'Proxima Nova', sans-serif;
+    font-weight: 900;
     font-size: 22px;
     color: var(--white);
     text-shadow: 0 0 8px var(--blue-glow);
   }
   .lb-count{
-    font-size: 11px;
+    font-size: 12px;
     color: var(--dim);
   }
   .lb-refresh{
@@ -612,8 +664,8 @@
     border: 1px solid rgba(255,255,255,0.25);
     background: transparent;
     color: var(--dim);
-    font-family: 'Oswald', sans-serif;
-    font-size: 12px;
+    font-family: 'Proxima Nova', sans-serif;
+    font-size: 13px;
     letter-spacing: 0.05em;
     text-transform: uppercase;
     cursor: pointer;
@@ -623,7 +675,7 @@
   footer{
     text-align:center;
     color: var(--dim);
-    font-size: 12px;
+    font-size: 13px;
     margin-top: 40px;
     letter-spacing: 0.04em;
     position: relative;
@@ -634,7 +686,6 @@
     .campus{ font-size: 21px; }
     .card{ padding: 14px; }
     .cat-label{ min-width: 100%; }
-    .banner{ padding: 16px 20px 12px; }
   }
 </style>
 </head>
@@ -642,17 +693,29 @@
 
   <div class="hero">
     <p class="eyebrow">Generosity and Experience — Team Day</p>
-    <div class="banner">
-      <h1>ATM Tulsa<span>Tour</span></h1>
-    </div>
-    <p class="sub">Tap any address to route there.</p>
+    <img class="atm-logo" src="https://cms-images.life.church/lc-site/pages/atm/2026/atm-opengraph-fb-2.jpg?w=1000&amp;h=345&amp;fit=crop&amp;crop=top" alt="At the Movies">
+    <h1 class="hero-subtitle">Tulsa Tour</h1>
+    <p class="hero-date" id="heroDate"></p>
+    <p class="hero-footnote">Tap any address to route there.</p>
   </div>
 
+  <div class="day-banner">
+    <div class="status" id="statusBar">Loading today's status…</div>
+    <div class="countdown" id="countdownEl"></div>
+    <div class="vote-ticker" id="voteTicker"></div>
+  </div>
 
-
-  <div class="status" id="statusBar">Loading today's status…</div>
-  <div class="countdown" id="countdownEl"></div>
-  <div class="vote-ticker" id="voteTicker"></div>
+  <div class="voting-helper">
+    <div class="voting-helper-title">Rating Scale</div>
+    <div class="voting-helper-list">
+      <div><strong>6</strong> Outstanding</div>
+      <div><strong>5</strong> Extremely Effective</div>
+      <div><strong>4</strong> Effective</div>
+      <div><strong>3</strong> Somewhat Effective</div>
+      <div><strong>2</strong> Somewhat Ineffective</div>
+      <div><strong>1</strong> Ineffective</div>
+    </div>
+  </div>
 
   <div class="route" id="route"></div>
 
@@ -721,6 +784,9 @@ const resultsUnlocked = now >= RESULTS_UNLOCK;
 const statusBar = document.getElementById("statusBar");
 const tourDateLabel = "Wednesday, July 22";
 const routeEl = document.getElementById("route");
+
+const heroDateEl = document.getElementById("heroDate");
+if(heroDateEl) heroDateEl.textContent = `${tourDateLabel}, ${TOUR_DATE.year}`;
 
 if(isPreview){
   const banner = document.createElement("div");
@@ -936,7 +1002,7 @@ function renderSurvey(campusId, campusLabel, theme){
     recap.className = "survey-recap";
     const scoreLine = document.createElement("div");
     scoreLine.className = "survey-recap-scores";
-    scoreLine.textContent = `You rated ${campusLabel} — Overall ${existing.overall} · Immersion ${existing.immersion} · Theme ${existing.theme}`;
+    scoreLine.textContent = `${existing.name || "You"} rated ${campusLabel} — Overall ${existing.overall} · Immersion ${existing.immersion} · Theme ${existing.theme}`;
     recap.appendChild(scoreLine);
     body.appendChild(recap);
 
@@ -973,7 +1039,7 @@ const voteTickerEl = document.getElementById("voteTicker");
 let confettiFired = false;
 function launchConfetti(){
   if(window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-  const colors = ["#2451FF", "#FFFFFF", "#7C9BFF"];
+  const colors = ["#00A8D8", "#FFFFFF", "#8FE3FF"];
   const count = 60;
   for(let i = 0; i < count; i++){
     const piece = document.createElement("div");
