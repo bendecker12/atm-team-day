@@ -985,6 +985,15 @@ async function init(){
     }
   }
 
+  // Once every stop's start time has passed (e.g. after the single-point-in-time
+  // "Drive back to Central!" stop), nothing matches the active-window or next-stop
+  // checks above. Treat the last stop as the active one so the timeline still
+  // reflects "here's where the day stands" instead of going blank.
+  let displayActiveIndex = activeIndex;
+  if(isTourDay && displayActiveIndex === -1 && nextIndex === -1 && pointStops.length){
+    displayActiveIndex = pointStops.length - 1;
+  }
+
   if(resultsUnlocked){
     statusBar.innerHTML = `<strong>Results are in</strong> — see the leaderboard below`;
   } else if(!isTourDay){
@@ -1019,8 +1028,8 @@ async function init(){
 
     pointCounter++;
     const idxAmongPoints = pointCounter - 1;
-    const isActive = idxAmongPoints === activeIndex;
-    const isDone = activeIndex !== -1 ? idxAmongPoints < activeIndex : (nextIndex !== -1 && idxAmongPoints < nextIndex);
+    const isActive = idxAmongPoints === displayActiveIndex;
+    const isDone = displayActiveIndex !== -1 ? idxAmongPoints < displayActiveIndex : (nextIndex !== -1 && idxAmongPoints < nextIndex);
 
     div.className = "stop" + (isActive ? " active" : "") + (isDone ? " done" : "");
 
