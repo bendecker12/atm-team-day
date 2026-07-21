@@ -42,6 +42,20 @@
     z-index: 0;
   }
 
+  .preview-banner{
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    background: #FFC94A;
+    color: #000;
+    text-align: center;
+    font-family: 'Oswald', sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    letter-spacing: 0.04em;
+    padding: 6px 12px;
+  }
+
   /* ---------- HERO ---------- */
   .hero{
     position: relative;
@@ -664,7 +678,25 @@ function parseEndMinutes(str){
   return parseStartMinutes(parts[1].trim() || parts[0].trim());
 }
 
-const now = new Date();
+// ---------- PREVIEW MODE ----------
+// ?previewAt=2026-07-22T10:30:00 simulates the clock for testing the live
+// active-stop marker and the post-unlock leaderboard, without waiting for
+// the real day/time. The whole app runs on this shifted clock when present.
+let previewOffsetMs = 0;
+let isPreview = false;
+try{
+  const previewAt = new URLSearchParams(location.search).get("previewAt");
+  if(previewAt){
+    const parsed = new Date(previewAt);
+    if(!isNaN(parsed.getTime())){
+      previewOffsetMs = parsed.getTime() - Date.now();
+      isPreview = true;
+    }
+  }
+}catch(e){}
+function virtualNow(){ return new Date(Date.now() + previewOffsetMs); }
+
+const now = virtualNow();
 const isTourDay = now.getFullYear() === TOUR_DATE.year &&
                    (now.getMonth()+1) === TOUR_DATE.month &&
                    now.getDate() === TOUR_DATE.day;
@@ -675,10 +707,17 @@ const statusBar = document.getElementById("statusBar");
 const tourDateLabel = "Wednesday, July 22";
 const routeEl = document.getElementById("route");
 
+if(isPreview){
+  const banner = document.createElement("div");
+  banner.className = "preview-banner";
+  banner.textContent = `🔧 Preview mode — simulating ${now.toLocaleString()}`;
+  document.body.insertBefore(banner, document.body.firstChild);
+}
+
 // ---------- COUNTDOWN ----------
 const countdownEl = document.getElementById("countdownEl");
 function updateCountdown(){
-  const diff = RESULTS_UNLOCK.getTime() - Date.now();
+  const diff = RESULTS_UNLOCK.getTime() - virtualNow().getTime();
   if(diff <= 0){
     countdownEl.style.display = "none";
     return;
