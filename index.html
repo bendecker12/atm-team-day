@@ -700,18 +700,18 @@ function renderSurvey(campusId, campusLabel, theme){
       submitBtn.disabled = true;
       submitBtn.textContent = "Submitting…";
       try{
-        if(!window.storage){
-          throw new Error("storage unavailable");
-        }
-        const id = campusId + "-" + Date.now() + "-" + Math.random().toString(36).slice(2,7);
-        const payload = JSON.stringify({
-          overall: selections.overall,
-          immersion: selections.immersion,
-          theme: selections.theme,
-          ts: Date.now()
+        const res = await fetch("/api/rate", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            campusId,
+            overall: selections.overall,
+            immersion: selections.immersion,
+            theme: selections.theme
+          })
         });
-        await window.storage.set(`rating:${campusId}:${id}`, payload, true);
-        try{ await window.storage.set(`submitted:${campusId}`, "1", false); }catch(e){}
+        if(!res.ok) throw new Error("request failed");
+        try{ localStorage.setItem(`submitted:${campusId}`, "1"); }catch(e){}
         renderThanks();
         if(typeof updateVoteTicker === "function") updateVoteTicker();
         if(resultsUnlocked) renderLeaderboard();
@@ -720,9 +720,7 @@ function renderSurvey(campusId, campusLabel, theme){
         submitBtn.textContent = "Submit rating";
         const errEl = document.createElement("div");
         errEl.className = "survey-error";
-        errEl.textContent = window.storage
-          ? "Couldn't save that — check your connection and try again."
-          : "Live scoring isn't available in this view. Open the shared artifact link (not a downloaded file) to submit ratings.";
+        errEl.textContent = "Couldn't save that — check your connection and try again.";
         body.appendChild(errEl);
       }
     });
@@ -739,14 +737,9 @@ function renderSurvey(campusId, campusLabel, theme){
   }
 
   // Check if this device already submitted for this campus
-  if(!window.storage){
-    renderForm();
-  } else {
-    Promise.resolve()
-      .then(() => window.storage.get(`submitted:${campusId}`, false))
-      .then(() => renderThanks())
-      .catch(() => renderForm());
-  }
+  let alreadySubmitted = false;
+  try{ alreadySubmitted = !!localStorage.getItem(`submitted:${campusId}`); }catch(e){}
+  if(alreadySubmitted){ renderThanks(); } else { renderForm(); }
 
   return wrap;
 }
@@ -823,15 +816,11 @@ function launchConfetti(){
 // ---------- LIVE VOTE TICKER ----------
 const voteTickerEl = document.getElementById("voteTicker");
 async function updateVoteTicker(){
-  if(!window.storage){ voteTickerEl.style.display = "none"; return; }
-  let totalVotes = 0;
   try{
-    for(const c of CAMPUSES){
-      try{
-        const listRes = await window.storage.list(`rating:${c.id}:`, true);
-        totalVotes += ((listRes && listRes.keys) || []).length;
-      }catch(e){ /* no ratings yet for this campus */ }
-    }
+    const res = await fetch("/api/leaderboard");
+    if(!res.ok) throw new Error("bad response");
+    const { totals } = await res.json();
+    const totalVotes = Object.values(totals || {}).reduce((sum, c) => sum + c.count, 0);
     voteTickerEl.style.display = "block";
     voteTickerEl.innerHTML = totalVotes > 0
       ? `<strong>${totalVotes}</strong> rating${totalVotes===1?"":"s"} submitted so far today`
@@ -844,27 +833,19 @@ updateVoteTicker();
 setInterval(updateVoteTicker, 20000);
 
 async function computeLeaderboard(){
-  const results = [];
-  for(const c of CAMPUSES){
-    let total = 0, count = 0;
-    if(window.storage){
-      try{
-        const listRes = await window.storage.list(`rating:${c.id}:`, true);
-        const keys = (listRes && listRes.keys) || [];
-        for(const k of keys){
-          try{
-            const rec = await window.storage.get(k, true);
-            const val = JSON.parse(rec.value);
-            total += (val.overall||0) + (val.immersion||0) + (val.theme||0);
-            count++;
-          }catch(e){ /* skip unreadable entry */ }
-        }
-      }catch(e){ /* no ratings yet for this campus */ }
-    }
-    results.push({ ...c, total, count, average: count > 0 ? total / count : 0 });
+  try{
+    const res = await fetch("/api/leaderboard");
+    if(!res.ok) throw new Error("bad response");
+    const { totals } = await res.json();
+    const results = CAMPUSES.map(c => {
+      const t = (totals && totals[c.id]) || { total: 0, count: 0 };
+      return { ...c, total: t.total, count: t.count, average: t.count > 0 ? t.total / t.count : 0 };
+    });
+    results.sort((a,b) => b.average - a.average);
+    return { results, storageAvailable: true };
+  }catch(e){
+    return { results: [], storageAvailable: false };
   }
-  results.sort((a,b) => b.average - a.average);
-  return { results, storageAvailable: !!window.storage };
 }
 
 async function renderLeaderboard(){
@@ -877,7 +858,7 @@ async function renderLeaderboard(){
     lbWrap.innerHTML = `
       <div class="lb-card">
         <div class="lb-title">🏆 Final Results</div>
-        <div class="lb-sub">Live scoring isn't available in this view. Open the shared artifact link (not a downloaded file) to see combined results.</div>
+        <div class="lb-sub">Couldn't load results right now — check your connection and refresh.</div>
       </div>
     `;
     return;
