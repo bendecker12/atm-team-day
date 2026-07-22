@@ -3,11 +3,11 @@ const { Client } = require("@notionhq/client");
 const notion = new Client({ auth: process.env.NOTION_TOKEN });
 const DATABASE_ID = process.env.NOTION_DATABASE_ID;
 const CAMPUS_ID_PATTERN = /^[a-z0-9_-]{1,50}$/;
-// 3:15 PM Central Daylight Time (UTC-5), July 22, 2026 = 20:15 UTC.
-// Must be an explicit UTC instant, not `new Date(2026, 6, 22, 15, 15, 0)` —
+// 3:30 PM Central Daylight Time (UTC-5), July 22, 2026 = 20:30 UTC.
+// Must be an explicit UTC instant, not `new Date(2026, 6, 22, 15, 30, 0)` —
 // that constructor uses the server process's local timezone, and Vercel's
-// Node runtime defaults to UTC, which made it lock 5 hours too early.
-const RESULTS_UNLOCK = new Date(Date.UTC(2026, 6, 22, 20, 15, 0));
+// Node runtime defaults to UTC, which would lock hours too early.
+const RESULTS_UNLOCK = new Date(Date.UTC(2026, 6, 22, 20, 30, 0));
 
 function isValidScore(n) {
   return Number.isInteger(n) && n >= 1 && n <= 6;
