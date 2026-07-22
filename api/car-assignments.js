@@ -90,6 +90,24 @@ async function parseCarColumn(columnBlockId) {
   return { name, driver, toTulsa: rosters.toTulsa || [], home: rosters.home || [] };
 }
 
+async function debugTree(blockId, depth) {
+  if (depth > 4) return [];
+  const children = await getBlockChildren(blockId);
+  let out = [];
+  for (const block of children) {
+    out.push({
+      depth,
+      type: block.type,
+      has_children: block.has_children,
+      text: plainText(getRichText(block)).trim().slice(0, 60)
+    });
+    if (block.has_children) {
+      out = out.concat(await debugTree(block.id, depth + 1));
+    }
+  }
+  return out;
+}
+
 module.exports = async (req, res) => {
   try {
     const pageBlocks = await getBlockChildren(AGENDA_PAGE_ID);
@@ -105,6 +123,13 @@ module.exports = async (req, res) => {
       res.status(500).json({ error: "Car Assignments columns not found" });
       return;
     }
+
+    if (req.query && req.query.debug) {
+      const tree = await debugTree(columnList.id, 0);
+      res.status(200).json({ tree });
+      return;
+    }
+
     const columns = await getBlockChildren(columnList.id);
     const cars = [];
     for (const column of columns) {
