@@ -47,8 +47,8 @@ function extractPassengers(text) {
 // collected. Non-text blocks (image, divider) are skipped but don't stop
 // recursion into anything nested under them.
 const TEXT_BLOCK_TYPES = new Set([
-  "paragraph", "heading_1", "heading_2", "heading_3", "callout", "quote",
-  "bulleted_list_item", "numbered_list_item", "toggle", "to_do"
+  "paragraph", "heading_1", "heading_2", "heading_3", "heading_4", "heading_5", "heading_6",
+  "callout", "quote", "bulleted_list_item", "numbered_list_item", "toggle", "to_do"
 ]);
 
 async function collectTextLines(blockId) {
@@ -90,24 +90,6 @@ async function parseCarColumn(columnBlockId) {
   return { name, driver, toTulsa: rosters.toTulsa || [], home: rosters.home || [] };
 }
 
-async function debugTree(blockId, depth) {
-  if (depth > 4) return [];
-  const children = await getBlockChildren(blockId);
-  let out = [];
-  for (const block of children) {
-    out.push({
-      depth,
-      type: block.type,
-      has_children: block.has_children,
-      text: plainText(getRichText(block)).trim().slice(0, 60)
-    });
-    if (block.has_children) {
-      out = out.concat(await debugTree(block.id, depth + 1));
-    }
-  }
-  return out;
-}
-
 module.exports = async (req, res) => {
   try {
     const pageBlocks = await getBlockChildren(AGENDA_PAGE_ID);
@@ -121,12 +103,6 @@ module.exports = async (req, res) => {
     const columnList = pageBlocks.slice(headingIdx + 1).find((b) => b.type === "column_list");
     if (!columnList) {
       res.status(500).json({ error: "Car Assignments columns not found" });
-      return;
-    }
-
-    if (req.query && req.query.debug) {
-      const tree = await debugTree(columnList.id, 0);
-      res.status(200).json({ tree });
       return;
     }
 
