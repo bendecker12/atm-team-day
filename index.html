@@ -734,7 +734,13 @@
     color: var(--dim);
     margin-bottom: 6px;
   }
-  .car-icon-wrap svg{ display:block; margin: 0 auto 6px; }
+  .car-icon{
+    display:block;
+    width: 150px;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto 6px;
+  }
   .car-name{
     font-family: 'Proxima Nova', sans-serif;
     font-weight: 900;
@@ -977,50 +983,30 @@ let refreshAll = async function(){};
 const nameRowsAwaitingFirstVote = [];
 
 // ---------- CAR ASSIGNMENTS ----------
-function carSvg(hex){
-  return `<svg viewBox="0 0 120 100" width="72" height="60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
-    <ellipse cx="60" cy="90" rx="48" ry="6" fill="rgba(0,0,0,0.35)"/>
-    <rect x="10" y="30" width="100" height="52" rx="16" fill="${hex}"/>
-    <rect x="24" y="14" width="72" height="32" rx="12" fill="${hex}"/>
-    <rect x="30" y="19" width="60" height="16" rx="6" fill="rgba(255,255,255,0.25)"/>
-    <circle cx="30" cy="82" r="13" fill="#1C1E24"/>
-    <circle cx="30" cy="82" r="5" fill="#666"/>
-    <circle cx="90" cy="82" r="13" fill="#1C1E24"/>
-    <circle cx="90" cy="82" r="5" fill="#666"/>
-    <circle cx="41" cy="48" r="10" fill="#fff"/>
-    <circle cx="43.5" cy="50" r="4.5" fill="#1C1E24"/>
-    <circle cx="79" cy="48" r="10" fill="#fff"/>
-    <circle cx="76.5" cy="50" r="4.5" fill="#1C1E24"/>
-    <path d="M44 65 Q60 74 76 65" stroke="#1C1E24" stroke-width="4.5" fill="none" stroke-linecap="round"/>
-    <rect x="46" y="70" width="28" height="7" rx="3.5" fill="#1C1E24" opacity="0.55"/>
-  </svg>`;
+async function fetchCarAssignments(){
+  try{
+    const res = await fetch("/api/car-assignments");
+    if(!res.ok) throw new Error("bad response");
+    const data = await res.json();
+    return data.cars || null;
+  }catch(e){
+    return null;
+  }
 }
 
-const CAR_ASSIGNMENTS = {
-  toTulsa: [
-    { name: "Lightning McQueen", van: "Van 1", color: "#E1362F", driver: "Adam", passengers: ["Ben", "Kaylee", "Jordan", "Rachel", "Jordan"] },
-    { name: "Sally Carrera", van: "Van 2", color: "#2451CC", driver: "Kyle", passengers: ["Russell", "Kendra", "Melissa", "Addy"] }
-  ],
-  home: [
-    { name: "Lightning McQueen", van: "Van 1", color: "#E1362F", driver: "Adam", passengers: ["Rachel", "Russell", "Melissa", "Kendra"] },
-    { name: "Sally Carrera", van: "Van 2", color: "#2451CC", driver: "Kyle", passengers: ["Addy", "Ben", "Kaylee", "Jordan", "Jordan"] }
-  ]
-};
-
-function renderCarAssignments(direction){
+function renderCarAssignments(cars, direction){
   const wrap = document.createElement("div");
   wrap.className = "car-assignments";
-  const cars = CAR_ASSIGNMENTS[direction] || [];
   wrap.innerHTML = `
     <div class="car-assignments-title">🚗 Car Assignments</div>
     <div class="car-grid">
       ${cars.map(car => `
         <div class="car-card">
           <div class="car-van-label">${escapeHtml(car.van)}</div>
-          <div class="car-icon-wrap">${carSvg(car.color)}</div>
-          <div class="car-name">${escapeHtml(car.name)}</div>
-          <div class="car-role">Driving: <strong>${escapeHtml(car.driver)}</strong></div>
-          <div class="car-passengers">${car.passengers.map(p => escapeHtml(p)).join(", ")}</div>
+          <img class="car-icon" src="${car.image}" alt="${escapeHtml(car.name || car.van)}">
+          <div class="car-name">${escapeHtml(car.name || "")}</div>
+          <div class="car-role">Driving: <strong>${escapeHtml(car.driver || "")}</strong></div>
+          <div class="car-passengers">${(car[direction] || []).map(p => escapeHtml(p)).join(", ")}</div>
         </div>
       `).join("")}
     </div>
@@ -1243,6 +1229,8 @@ async function init(){
     return;
   }
 
+  const carAssignments = await fetchCarAssignments();
+
   const pointStops = stops.filter(s => s.type === "point");
   let activeIndex = -1;
   let nextIndex = -1;
@@ -1332,10 +1320,10 @@ async function init(){
 
     if(s.campusId){
       div.querySelector(".card").appendChild(renderSurvey(s.campusId, s.label, s.theme));
-    } else if(idxAmongPoints === 0){
-      div.querySelector(".card").appendChild(renderCarAssignments("toTulsa"));
-    } else if(idxAmongPoints === pointStops.length - 1){
-      div.querySelector(".card").appendChild(renderCarAssignments("home"));
+    } else if(carAssignments && idxAmongPoints === 0){
+      div.querySelector(".card").appendChild(renderCarAssignments(carAssignments, "toTulsa"));
+    } else if(carAssignments && idxAmongPoints === pointStops.length - 1){
+      div.querySelector(".card").appendChild(renderCarAssignments(carAssignments, "home"));
     }
 
     routeEl.appendChild(div);
