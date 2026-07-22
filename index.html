@@ -701,6 +701,62 @@
   }
   .lb-refresh:hover{ color: var(--white); border-color: var(--blue); }
 
+  /* ---------- CAR ASSIGNMENTS ---------- */
+  .car-assignments{
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px dashed rgba(255,255,255,0.22);
+  }
+  .car-assignments-title{
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    letter-spacing: 0.02em;
+    color: var(--white);
+    margin-bottom: 10px;
+  }
+  .car-grid{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .car-card{
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.14);
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+  }
+  .car-van-label{
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--dim);
+    margin-bottom: 6px;
+  }
+  .car-icon-wrap svg{ display:block; margin: 0 auto 6px; }
+  .car-name{
+    font-family: 'Proxima Nova', sans-serif;
+    font-weight: 900;
+    font-size: 16px;
+    color: var(--white);
+  }
+  .car-role{
+    font-size: 14px;
+    color: var(--dim);
+    margin-top: 8px;
+  }
+  .car-role strong{ color: var(--white); }
+  .car-passengers{
+    font-size: 14px;
+    color: var(--dim);
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+  @media (max-width: 420px){
+    .car-grid{ grid-template-columns: 1fr; }
+  }
+
   footer{
     text-align:center;
     color: var(--dim);
@@ -919,6 +975,58 @@ let refreshAll = async function(){};
 // browser's first-ever vote. Cleared out the moment any of them submits,
 // so name only ever has to be entered once per browser.
 const nameRowsAwaitingFirstVote = [];
+
+// ---------- CAR ASSIGNMENTS ----------
+function carSvg(hex){
+  return `<svg viewBox="0 0 120 100" width="72" height="60" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+    <ellipse cx="60" cy="90" rx="48" ry="6" fill="rgba(0,0,0,0.35)"/>
+    <rect x="10" y="30" width="100" height="52" rx="16" fill="${hex}"/>
+    <rect x="24" y="14" width="72" height="32" rx="12" fill="${hex}"/>
+    <rect x="30" y="19" width="60" height="16" rx="6" fill="rgba(255,255,255,0.25)"/>
+    <circle cx="30" cy="82" r="13" fill="#1C1E24"/>
+    <circle cx="30" cy="82" r="5" fill="#666"/>
+    <circle cx="90" cy="82" r="13" fill="#1C1E24"/>
+    <circle cx="90" cy="82" r="5" fill="#666"/>
+    <circle cx="41" cy="48" r="10" fill="#fff"/>
+    <circle cx="43.5" cy="50" r="4.5" fill="#1C1E24"/>
+    <circle cx="79" cy="48" r="10" fill="#fff"/>
+    <circle cx="76.5" cy="50" r="4.5" fill="#1C1E24"/>
+    <path d="M44 65 Q60 74 76 65" stroke="#1C1E24" stroke-width="4.5" fill="none" stroke-linecap="round"/>
+    <rect x="46" y="70" width="28" height="7" rx="3.5" fill="#1C1E24" opacity="0.55"/>
+  </svg>`;
+}
+
+const CAR_ASSIGNMENTS = {
+  toTulsa: [
+    { name: "Lightning McQueen", van: "Van 1", color: "#E1362F", driver: "Adam", passengers: ["Ben", "Kaylee", "Jordan", "Rachel", "Jordan"] },
+    { name: "Sally Carrera", van: "Van 2", color: "#2451CC", driver: "Kyle", passengers: ["Russell", "Kendra", "Melissa", "Addy"] }
+  ],
+  home: [
+    { name: "Lightning McQueen", van: "Van 1", color: "#E1362F", driver: "Adam", passengers: ["Rachel", "Russell", "Melissa", "Kendra"] },
+    { name: "Sally Carrera", van: "Van 2", color: "#2451CC", driver: "Kyle", passengers: ["Addy", "Ben", "Kaylee", "Jordan", "Jordan"] }
+  ]
+};
+
+function renderCarAssignments(direction){
+  const wrap = document.createElement("div");
+  wrap.className = "car-assignments";
+  const cars = CAR_ASSIGNMENTS[direction] || [];
+  wrap.innerHTML = `
+    <div class="car-assignments-title">🚗 Car Assignments</div>
+    <div class="car-grid">
+      ${cars.map(car => `
+        <div class="car-card">
+          <div class="car-van-label">${escapeHtml(car.van)}</div>
+          <div class="car-icon-wrap">${carSvg(car.color)}</div>
+          <div class="car-name">${escapeHtml(car.name)}</div>
+          <div class="car-role">Driving: <strong>${escapeHtml(car.driver)}</strong></div>
+          <div class="car-passengers">${car.passengers.map(p => escapeHtml(p)).join(", ")}</div>
+        </div>
+      `).join("")}
+    </div>
+  `;
+  return wrap;
+}
 
 function renderSurvey(campusId, campusLabel, theme){
   const wrap = document.createElement("div");
@@ -1224,6 +1332,10 @@ async function init(){
 
     if(s.campusId){
       div.querySelector(".card").appendChild(renderSurvey(s.campusId, s.label, s.theme));
+    } else if(idxAmongPoints === 0){
+      div.querySelector(".card").appendChild(renderCarAssignments("toTulsa"));
+    } else if(idxAmongPoints === pointStops.length - 1){
+      div.querySelector(".card").appendChild(renderCarAssignments("home"));
     }
 
     routeEl.appendChild(div);
