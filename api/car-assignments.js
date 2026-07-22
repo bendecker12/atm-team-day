@@ -42,16 +42,37 @@ function extractPassengers(text) {
   return rosterText.split(",").map((p) => p.trim()).filter(Boolean);
 }
 
+// Text-bearing block types worth reading. Containers like "callout" and
+// "toggle" can hold their own rich_text AND nested children, so both are
+// collected. Non-text blocks (image, divider) are skipped but don't stop
+// recursion into anything nested under them.
+const TEXT_BLOCK_TYPES = new Set([
+  "paragraph", "heading_1", "heading_2", "heading_3", "callout", "quote",
+  "bulleted_list_item", "numbered_list_item", "toggle", "to_do"
+]);
+
+async function collectTextLines(blockId) {
+  const children = await getBlockChildren(blockId);
+  const lines = [];
+  for (const block of children) {
+    if (TEXT_BLOCK_TYPES.has(block.type)) {
+      const text = plainText(getRichText(block)).trim();
+      if (text) lines.push(text);
+    }
+    if (block.has_children) {
+      lines.push(...(await collectTextLines(block.id)));
+    }
+  }
+  return lines;
+}
+
 async function parseCarColumn(columnBlockId) {
-  const children = await getBlockChildren(columnBlockId);
+  const lines = await collectTextLines(columnBlockId);
   let name = null;
   let driver = null;
   const rosters = {};
 
-  for (const block of children) {
-    const text = plainText(getRichText(block)).trim();
-    if (!text) continue;
-
+  for (const text of lines) {
     if (name === null) {
       name = text;
       continue;
